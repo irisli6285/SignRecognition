@@ -43,6 +43,7 @@ def process_video(net, video, out, capture_realtime, detection_threshold, class_
 
             if len(class_ids) > 0:
                 for classId, confidence, box in zip(class_ids.flatten(), confs.flatten(), bbox):
+                    print(class_names[classId - 1].upper(), box)
                     cv2.rectangle(frame, box, color=(0, 255, 0), thickness=2)
                     # add names to box origin + (10,30)
                     cv2.putText(frame, class_names[classId - 1].upper(), (box[0] + 10, box[1] + 30),
