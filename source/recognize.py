@@ -53,7 +53,7 @@ def calculate_max(box):
     return box[3]
 
 
-def process_video(net, video, out, capture_realtime, detection_threshold, class_names):
+def process_video(net, video, out, capture_realtime, detection_threshold, class_names, detect_class_filter):
     count = 0
     # Read until video is completed
     while video.isOpened():
@@ -66,15 +66,17 @@ def process_video(net, video, out, capture_realtime, detection_threshold, class_
 
             if len(class_ids) > 0:
                 for classId, confidence, box in zip(class_ids.flatten(), confs.flatten(), bbox):
-                    print(class_names[classId - 1].upper(), box)
-                    print("box size = " + str(calculate_size(box)))
-                    cv2.rectangle(frame, box, color=(0, 255, 0), thickness=2)
-                    # add names to box origin + (10,30)
-                    cv2.putText(frame, class_names[classId - 1].upper(), (box[0] + 10, box[1] + 30),
-                                cv2.FONT_HERSHEY_COMPLEX, fontScale=1, color=(0, 255, 0), thickness=2)
-                    # add conf level to box origin + (10,60)
-                    cv2.putText(frame, str(round(confidence * 100, 2)) + '%', (box[0] + 10, box[1] + 60),
-                                cv2.FONT_HERSHEY_COMPLEX, fontScale=1, color=(0, 255, 0), thickness=2)
+                    class_name = class_names[classId - 1].upper()
+                    if (not detect_class_filter) or (class_name in detect_class_filter):
+                        print(class_name, box)
+                        print("box size = " + str(calculate_size(box)))
+                        cv2.rectangle(frame, box, color=(0, 255, 0), thickness=2)
+                        # add names to box origin + (10,30)
+                        cv2.putText(frame, class_name, (box[0] + 10, box[1] + 30),
+                                    cv2.FONT_HERSHEY_COMPLEX, fontScale=1, color=(0, 255, 0), thickness=2)
+                        # add conf level to box origin + (10,60)
+                        cv2.putText(frame, str(round(confidence * 100, 2)) + '%', (box[0] + 10, box[1] + 60),
+                                    cv2.FONT_HERSHEY_COMPLEX, fontScale=1, color=(0, 255, 0), thickness=2)
 
             # Display the resulting frame
             if not capture_realtime:
@@ -117,13 +119,15 @@ def main():
 
     detection_threshold = 0.5
     capture_realtime = False
+    detect_class_filter = ['STOP SIGN']
+
     class_names = mn.get_class_names()
     net = mn.init_model_network()
     vd, output_file = prepare_video(capture_realtime, video_path, video_filename)
     # Define the codec and create VideoWriter object
     # out = cv2.VideoWriter(outputFile, cv2.VideoWriter_fourcc('M','J','P','G'), 10, get_video_resolution(vd))
     out = cv2.VideoWriter(output_file, cv2.VideoWriter_fourcc(*'mp4v'), 10, get_video_resolution(vd))
-    process_video(net, vd, out, capture_realtime, detection_threshold, class_names)
+    process_video(net, vd, out, capture_realtime, detection_threshold, class_names, detect_class_filter)
     clean_up(vd, out)
 
 
