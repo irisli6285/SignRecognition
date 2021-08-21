@@ -53,6 +53,17 @@ def calculate_max(box):
     return box[3]
 
 
+def calc_distance(size):
+    # we fit a linear model to predict distance based on stop sign size;
+    # intercept and slope are two parameters of the model, calibrated by
+    # measuring actual size and distance samples with my own camera;
+    # to predict using a autonomous vehicle, need to measure with its own
+    # camera, collect data, and re-calibrate the parameters
+    intercept = 8.0932
+    slope = 173320
+    return intercept + slope * (1.0 / size)
+
+
 def process_video(net, video, out, capture_realtime, detection_threshold, class_names, detect_class_filter):
     count = 0
     # Read until video is completed
@@ -69,7 +80,11 @@ def process_video(net, video, out, capture_realtime, detection_threshold, class_
                     class_name = class_names[classId - 1].upper()
                     if (not detect_class_filter) or (class_name in detect_class_filter):
                         print(class_name, box)
-                        print("box size = " + str(calculate_size(box)))
+                        size = calculate_size(box)
+                        print("box size = " + str(size))
+                        print("predicted distance = " + str(calc_distance(size)) + " cm ")
+                        # add code to publish (distance, confidence, size) to ROS workspace/topic here:
+                        # ......
                         cv2.rectangle(frame, box, color=(0, 255, 0), thickness=2)
                         # add names to box origin + (10,30)
                         cv2.putText(frame, class_name, (box[0] + 10, box[1] + 30),
@@ -83,6 +98,7 @@ def process_video(net, video, out, capture_realtime, detection_threshold, class_
                 out.write(frame)
                 cv2.imwrite("../output/frame%d.jpg" % count, frame)
             # display frame after writing to file(s)
+            cv2.namedWindow('Frame', cv2.WINDOW_NORMAL)
             cv2.imshow('Frame', frame)
 
             # Press Q on keyboard to  exit
@@ -105,20 +121,22 @@ def clean_up(video, out):
 
 def main():
     print(os.getcwd())
-    # video_path = '../videos/'
-    # video_filename = 'Stop sign recognition.mp4'
+    video_path = '../videos/'
+    video_filename = 'Stop sign recognition.mp4'
 
-    video_path = '../videos/Samsung Galaxy G20/'
+    # video_path = '../videos/Samsung Galaxy G20/'
     video_filenames = [
         '20210705_145202.mp4',
         '20210705_145450.mp4',
         '20210705_150729.mp4',
         '20210705_153646.mp4'
     ]
-    video_filename = video_filenames[1]
+    # video_filename = video_filenames[1]
 
     detection_threshold = 0.5
-    capture_realtime = False
+    # proecess streaming video from system's default camera if capture_realtime is set to True;
+    # otherwise process recorded video file located at video_path/vedeo_filename
+    capture_realtime = True
     detect_class_filter = ['STOP SIGN']
 
     class_names = mn.get_class_names()
