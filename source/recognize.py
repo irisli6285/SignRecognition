@@ -3,6 +3,8 @@ import os
 import mobilenet as mn
 import math
 
+# uncomment this if not publishing
+# import publisher
 
 def prepare_video(capture_realtime, video_path, video_filename):
     if capture_realtime:
@@ -64,7 +66,7 @@ def calc_distance(size):
     return intercept + slope * (1.0 / size)
 
 
-def process_video(net, video, out, capture_realtime, detection_threshold, class_names, detect_class_filter):
+def process_video(net, video, out, capture_realtime, detection_threshold, class_names, detect_class_filter, do_publish, pub):
     count = 0
     # Read until video is completed
     while video.isOpened():
@@ -82,9 +84,14 @@ def process_video(net, video, out, capture_realtime, detection_threshold, class_
                         print(class_name, box)
                         size = calculate_size(box)
                         print("box size = " + str(size))
-                        print("predicted distance = " + str(calc_distance(size)) + " cm ")
+                        dist = calc_distance(size)
+                        print("predicted distance = " + str(dist) + " cm ")
                         # add code to publish (distance, confidence, size) to ROS workspace/topic here:
-                        # ......
+                        if do_publish:
+                            dist_str = 'distance: ' + str(dist) + '; confidence: ' + str(confidence)
+                            if not publisher.publist_dist(pub, dist_str):
+                                print("cannot publish, publisher is shut donw")
+
                         cv2.rectangle(frame, box, color=(0, 255, 0), thickness=2)
                         # add names to box origin + (10,30)
                         cv2.putText(frame, class_name, (box[0] + 10, box[1] + 30),
@@ -137,7 +144,15 @@ def main():
     # proecess streaming video from system's default camera if capture_realtime is set to True;
     # otherwise process recorded video file located at video_path/vedeo_filename
     capture_realtime = True
+
+    # set this to False if not publishing
+    do_publish = False
     detect_class_filter = ['STOP SIGN']
+
+    if do_publish:
+        pub = publisher.init_publisher()
+    else:
+        pub = ''
 
     class_names = mn.get_class_names()
     net = mn.init_model_network()
@@ -145,7 +160,7 @@ def main():
     # Define the codec and create VideoWriter object
     # out = cv2.VideoWriter(outputFile, cv2.VideoWriter_fourcc('M','J','P','G'), 10, get_video_resolution(vd))
     out = cv2.VideoWriter(output_file, cv2.VideoWriter_fourcc(*'mp4v'), 10, get_video_resolution(vd))
-    process_video(net, vd, out, capture_realtime, detection_threshold, class_names, detect_class_filter)
+    process_video(net, vd, out, capture_realtime, detection_threshold, class_names, detect_class_filter, do_publish, pub)
     clean_up(vd, out)
 
 
