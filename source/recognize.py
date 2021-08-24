@@ -3,7 +3,7 @@ import os
 import mobilenet as mn
 import math
 
-# uncomment this if not publishing
+# comment this if not publishing
 # import publisher
 
 def prepare_video(capture_realtime, video_path, video_filename):
