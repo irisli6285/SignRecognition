@@ -9,6 +9,7 @@ import math
 def prepare_video(capture_realtime, video_path, video_filename):
     if capture_realtime:
         # read vd from camera
+        # if system has multi-cameras, try switch to (1) instead of (0) ...
         video = cv2.VideoCapture(0)
         video.set(3, 640)
         video.set(4, 480)
@@ -85,7 +86,7 @@ def process_video(net, video, out, capture_realtime, detection_threshold, class_
                         size = calculate_size(box)
                         print("box size = " + str(size))
                         dist = calc_distance(size)
-                        print("predicted distance = " + str(dist) + " cm ")
+                        print("predicted distance = " + str(dist) + " inch(es) ")
                         # add code to publish (distance, confidence, size) to ROS workspace/topic here:
                         if do_publish:
                             dist_str = 'distance: ' + str(dist) + '; confidence: ' + str(confidence)
